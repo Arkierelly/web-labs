@@ -230,6 +230,8 @@ function injectBridge(html){
         arguments[1]=fixUrl(url);
         try{
           const shown=String(url);
+          this.addEventListener('error',function(){send('warn',['Network error (XHR, status 0) for '+shown+' | blocked, offline, or missing CORS headers'])});
+          this.addEventListener('timeout',function(){send('warn',['Timeout (XHR) for '+shown])});
           this.addEventListener('load',function(){
             try{
               if(this.status>=400){
@@ -271,7 +273,12 @@ function injectBridge(html){
                   send('warn',['HTTP '+r.status+' (fetch) for '+(r.url||String(input))+(ra?' | retry-after: '+ra:'')]);
                 }
               }catch(e){}
-            }).catch(function(){});
+            }).catch(function(err){
+              try{
+                if(err&&err.name==='AbortError')return;
+                send('warn',['Network error (fetch) for '+String(typeof input==='string'?input:((input&&input.url)||input))+' | '+(err&&err.message)]);
+              }catch(e){}
+            });
           }catch(e){}
           return p;
         };
