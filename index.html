@@ -1,0 +1,269 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<meta name="theme-color" content="#11141b">
+<title>WEB LAB — HTML Game Runner</title>
+<style>
+:root{color-scheme:dark;--bg:#11141b;--panel:#191e28;--panel2:#202735;--border:#30394a;--text:#edf1fa;--muted:#9aa7bc;--accent:#9caeff;--accent2:#b9c5ff;--good:#75d6a2;--warn:#ffd27a;--bad:#ff8f9c;--editor:#11151d;--radius:12px}
+:root[data-theme="light"]{color-scheme:light;--bg:#f3f5f9;--panel:#fff;--panel2:#edf0f6;--border:#d9dfeb;--text:#202636;--muted:#647087;--accent:#4559c7;--accent2:#3347b7;--good:#18794e;--warn:#986300;--bad:#bd2d40;--editor:#fbfcff}
+*{box-sizing:border-box}html,body{margin:0;width:100%;height:100%;background:var(--bg);color:var(--text);font:14px/1.45 system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif}body{overflow:hidden}button,input,select,textarea{font:inherit}button{cursor:pointer;border:1px solid var(--border);background:var(--panel2);color:var(--text);border-radius:9px;padding:8px 11px;transition:background .12s,border-color .12s}button:hover{border-color:var(--accent)}button:focus-visible,input:focus-visible,textarea:focus-visible,select:focus-visible{outline:2px solid var(--accent);outline-offset:2px}button.primary{background:var(--accent);border-color:var(--accent);color:#101522;font-weight:700}button.danger{color:var(--bad)}button.icon{min-width:36px;padding:7px 9px}button:disabled{opacity:.45;cursor:not-allowed}
+.app{height:100%;display:flex;flex-direction:column;min-height:0}.topbar{display:flex;align-items:center;gap:12px;padding:10px 14px;border-bottom:1px solid var(--border);background:var(--panel);flex-wrap:wrap}.brand{display:flex;align-items:center;gap:10px;min-width:180px}.brand-mark{display:grid;place-items:center;width:35px;height:35px;border-radius:10px;background:var(--panel2);color:var(--accent);font-weight:900;font-size:19px}.brand h1{font-size:16px;letter-spacing:.08em;margin:0}.brand small{display:block;font-size:10px;letter-spacing:.1em;color:var(--muted)}.toolbar{display:flex;align-items:center;gap:6px;flex-wrap:wrap}.toolbar.main{margin-left:auto}.status{font-size:12px;color:var(--muted);display:flex;align-items:center;gap:6px;white-space:nowrap}.dot{width:7px;height:7px;border-radius:50%;background:var(--good)}.dot.warn{background:var(--warn)}.dot.bad{background:var(--bad)}.subbar{display:flex;gap:8px;align-items:center;padding:8px 14px;background:var(--bg);border-bottom:1px solid var(--border);flex-wrap:wrap}.subbar label{color:var(--muted);font-size:12px}.subbar select,.subbar input[type=number]{background:var(--panel);border:1px solid var(--border);color:var(--text);border-radius:8px;padding:6px 8px}.subbar .spacer{flex:1}.mainarea{display:flex;flex:1;min-height:0;gap:0;padding:10px}.workspace{display:flex;gap:10px;min-width:0;min-height:0;width:100%}.panel{background:var(--panel);border:1px solid var(--border);border-radius:var(--radius);display:flex;flex-direction:column;min-width:0;min-height:0;overflow:hidden}.editor-panel{flex:0 0 var(--editor-width,50%)}.preview-panel{flex:1}.panel-head{display:flex;align-items:center;gap:8px;padding:9px 11px;border-bottom:1px solid var(--border);min-height:43px}.panel-head strong{font-size:12px;letter-spacing:.04em}.panel-head .muted{color:var(--muted);font-size:11px}.panel-head .right{margin-left:auto;display:flex;gap:5px;align-items:center}.tabs{display:flex;gap:4px;padding:7px 8px 0;border-bottom:1px solid var(--border);background:var(--panel)}.tab{border:0;border-radius:7px 7px 0 0;background:transparent;color:var(--muted);padding:7px 11px;font-size:12px}.tab.active{background:var(--editor);color:var(--text);border:1px solid var(--border);border-bottom-color:var(--editor)}.editor-wrap{display:flex;flex:1;min-height:0;background:var(--editor);position:relative}.gutter{flex:0 0 42px;padding:12px 7px 16px 0;text-align:right;overflow:hidden;white-space:pre;color:var(--muted);opacity:.65;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;user-select:none;border-right:1px solid var(--border)}textarea.code{resize:none;border:0;outline:0;border-radius:0;flex:1;min-width:0;min-height:0;background:var(--editor);color:var(--text);padding:12px 12px 18px;font:12px/1.55 ui-monospace,SFMono-Regular,Consolas,monospace;tab-size:2;white-space:pre;overflow:auto;spellcheck:false;caret-color:var(--accent)}.editor-foot{display:flex;gap:12px;align-items:center;padding:6px 10px;border-top:1px solid var(--border);font-size:11px;color:var(--muted)}.editor-foot span:last-child{margin-left:auto}.preview-tools{display:flex;align-items:center;gap:5px}.preview-stage{position:relative;flex:1;min-height:0;background:#0b0d12;display:flex;align-items:stretch;justify-content:stretch;overflow:hidden}.preview-stage iframe{width:100%;height:100%;border:0;background:white}.preview-placeholder{margin:auto;max-width:340px;text-align:center;padding:25px;color:#b6bfd1}.preview-placeholder .big{font-size:38px;margin-bottom:10px}.preview-placeholder h2{font-size:17px;color:#edf1fa;margin:0 0 7px}.preview-placeholder p{font-size:12px;line-height:1.7}.preview-placeholder kbd{border:1px solid #4b5262;border-radius:5px;padding:2px 5px}.console{height:155px;flex:0 0 155px;border-top:1px solid var(--border);display:flex;flex-direction:column;min-height:0}.console.hidden{display:none}.console-head{display:flex;align-items:center;padding:6px 10px;gap:7px;border-bottom:1px solid var(--border);font-size:11px;color:var(--muted)}.console-output{overflow:auto;padding:5px 9px;font:11px/1.5 ui-monospace,monospace;white-space:pre-wrap;overflow-wrap:anywhere}.logline{padding:2px 4px;border-bottom:1px solid color-mix(in srgb,var(--border) 55%,transparent)}.logline.error{color:var(--bad)}.logline.warn{color:var(--warn)}.logline.info{color:var(--muted)}.drop-overlay{display:none;position:fixed;inset:12px;z-index:30;border:3px dashed var(--accent);border-radius:18px;background:color-mix(in srgb,var(--bg) 93%,transparent);align-items:center;justify-content:center;text-align:center;font-size:20px;font-weight:700;pointer-events:none}.drop-overlay.show{display:flex}.toast{position:fixed;left:50%;bottom:20px;transform:translateX(-50%);z-index:50;background:var(--panel2);border:1px solid var(--border);box-shadow:0 8px 35px #0004;border-radius:10px;padding:10px 14px;max-width:min(90vw,560px);font-size:13px}.toast[hidden]{display:none}.file-input{display:none}.minimal .editor-panel{display:none}.minimal .preview-panel{flex:1}.minimal .mainarea{padding:7px}.minimal .workspace{gap:0}.minimal .preview-panel{border-radius:10px}.minimal .topbar{padding:7px 10px}.minimal .brand small{display:none}.minimal .subbar{display:none}.minimal .editor-panel{display:none}.minimal .preview-panel .panel-head .debug-only{display:none}.minimal .console{display:none}.minimal .panel-head{padding:6px 9px;min-height:37px}.minimal .mainarea{padding:6px}.minimal .preview-stage{background:#080a0e}.modal-backdrop{display:none;position:fixed;inset:0;background:#0008;z-index:40;align-items:center;justify-content:center;padding:15px}.modal-backdrop.open{display:flex}.modal{width:min(560px,100%);max-height:85vh;overflow:auto;background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:17px;box-shadow:0 20px 60px #0006}.modal h2{font-size:17px;margin:0 0 12px}.modal p,.modal li{color:var(--muted);font-size:13px;line-height:1.65}.modal-actions{display:flex;justify-content:flex-end;gap:7px;margin-top:15px}.setting-row{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)}.setting-row:last-child{border:0}.setting-row label{font-size:13px}.setting-row small{display:block;color:var(--muted);font-size:11px}.setting-row input[type=range]{width:130px}.empty-state{color:var(--muted);font-size:12px;padding:12px}.kbd{border:1px solid var(--border);border-radius:5px;padding:1px 5px;font:11px ui-monospace,monospace}.file-summary{max-height:160px;overflow:auto;background:var(--editor);border-radius:8px;padding:8px;font:11px/1.5 ui-monospace,monospace;color:var(--muted)}.sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+@media(max-width:850px){.brand{min-width:130px}.toolbar.main{margin-left:0}.mainarea{padding:6px}.workspace{flex-direction:column}.editor-panel{flex:0 0 48%}.preview-panel{flex:1}.topbar{gap:7px}.toolbar button{padding:7px 8px}.panel-head{min-height:38px}}
+@media(max-width:520px){.brand h1{font-size:14px}.brand-mark{width:30px;height:30px}.status{display:none}.toolbar button .long-label{display:none}.subbar{padding:6px 9px}.editor-panel{flex-basis:45%}.console{height:120px;flex-basis:120px}}
+</style>
+</head>
+<body>
+<div class="app" id="app">
+  <header class="topbar">
+    <div class="brand"><div class="brand-mark" aria-hidden="true">⌘</div><div><h1>WEB LAB</h1><small>HTML GAME PLAYGROUND</small></div></div>
+    <div class="toolbar">
+      <button id="loadHtmlBtn" title="Open a standalone HTML file">↥ <span class="long-label">Open HTML</span></button>
+      <button id="loadZipBtn" title="Import a ZIP game bundle">▣ <span class="long-label">Import ZIP</span></button>
+      <button id="pasteBtn" title="Paste or replace editor code">Paste</button>
+    </div>
+    <div class="toolbar main">
+      <button class="primary" id="runBtn" title="Run game (Ctrl/⌘ + Enter)">▶ <span class="long-label">Run</span></button>
+      <button id="stopBtn" title="Stop current game">■ <span class="long-label">Stop</span></button>
+      <button id="resetBtn" title="Reset current game">↻ <span class="long-label">Reset</span></button>
+      <button id="layoutBtn" title="Switch developer/minimal layout">◫ <span class="long-label">Play mode</span></button>
+      <button id="settingsBtn" class="icon" title="Customize appearance">⚙</button>
+    </div>
+    <div class="status" id="status"><span class="dot"></span><span>Ready</span></div>
+  </header>
+  <div class="subbar">
+    <label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select>
+    <label for="zoomRange">Preview</label><input id="zoomRange" type="range" min="50" max="125" step="5" value="100" aria-label="Preview zoom"><span id="zoomLabel" class="muted">100%</span>
+    <label for="fontRange">Editor size</label><input id="fontRange" type="range" min="10" max="18" value="12" aria-label="Editor font size"><span id="fontLabel" class="muted">12px</span>
+    <span class="spacer"></span><button id="helpBtn">Help & limits</button>
+  </div>
+  <main class="mainarea">
+    <div class="workspace" id="workspace">
+      <section class="panel editor-panel" aria-label="Code editor">
+        <div class="panel-head"><strong>EDITOR</strong><span class="muted" id="fileLabel">index.html</span><div class="right"><button id="clearBtn" class="icon" title="Clear current editor">⌫</button></div></div>
+        <div class="tabs" role="tablist" aria-label="Editor language">
+          <button class="tab active" role="tab" aria-selected="true" data-tab="html">HTML</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="css">CSS</button>
+          <button class="tab" role="tab" aria-selected="false" data-tab="js">JavaScript</button>
+        </div>
+        <div class="editor-wrap"><pre class="gutter" id="gutter" aria-hidden="true">1</pre><textarea class="code" id="codeEditor" aria-label="HTML source editor" wrap="off" autocapitalize="off" autocomplete="off" autocorrect="off" spellcheck="false"></textarea></div>
+        <div class="editor-foot"><span id="lineInfo">Ln 1, Col 1</span><span id="charInfo">0 chars</span><span id="dirtyInfo">Session only</span></div>
+      </section>
+      <section class="panel preview-panel" aria-label="Game preview">
+        <div class="panel-head"><strong>PREVIEW</strong><span class="muted" id="previewLabel">Waiting for code</span><div class="right preview-tools"><button id="consoleBtn" class="debug-only">Console</button><button id="fullscreenBtn" title="Fullscreen preview">⛶ <span class="long-label">Fullscreen</span></button></div></div>
+        <div class="preview-stage" id="previewStage">
+          <div class="preview-placeholder" id="placeholder"><div class="big">⌘</div><h2>Ready when you are</h2><p>Paste a game, open an HTML file, or import a ZIP bundle. Then press <kbd>Run</kbd>.<br><br><span style="opacity:.8">Tip: Ctrl/⌘ + Enter runs the current code.</span></p></div>
+          <iframe id="gameFrame" title="Isolated game preview" sandbox="allow-scripts allow-forms allow-pointer-lock" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write" referrerpolicy="no-referrer" hidden></iframe>
+        </div>
+        <section class="console" id="consolePanel"><div class="console-head"><strong>CONSOLE</strong><span id="consoleCount">0 messages</span><span style="margin-left:auto"></span><button id="clearConsoleBtn">Clear</button><button id="hideConsoleBtn">Hide</button></div><div class="console-output" id="consoleOutput"><div class="empty-state">Console output will appear here when a game runs.</div></div></section>
+      </section>
+    </div>
+  </main>
+</div>
+<input class="file-input" type="file" id="htmlFileInput" accept=".html,.htm,text/html">
+<input class="file-input" type="file" id="zipFileInput" accept=".zip,application/zip,application/x-zip-compressed">
+<input class="file-input" type="file" id="anyFileInput" multiple>
+<div class="drop-overlay" id="dropOverlay">Drop an HTML file or ZIP game bundle to load it</div>
+<div class="toast" id="toast" role="status" hidden></div>
+<div class="modal-backdrop" id="settingsModal" role="dialog" aria-modal="true" aria-labelledby="settingsTitle">
+  <div class="modal"><h2 id="settingsTitle">Customize WEB LAB</h2>
+    <div class="setting-row"><div><label for="layoutSelect">Layout</label><small>Developer editor or play-focused preview</small></div><select id="layoutSelect"><option value="developer">Developer</option><option value="minimal">Minimal play mode</option></select></div>
+    <div class="setting-row"><div><label for="themeSelect2">Color theme</label><small>Changes the runner interface</small></div><select id="themeSelect2"><option value="dark">Dark</option><option value="light">Light</option></select></div>
+    <div class="setting-row"><div><label for="splitRange">Editor width</label><small>Percentage of workspace width</small></div><input id="splitRange" type="range" min="30" max="70" value="50"></div>
+    <div class="setting-row"><div><label for="fontRange2">Editor font size</label><small>10–18 pixels</small></div><input id="fontRange2" type="range" min="10" max="18" value="12"></div>
+    <div class="setting-row"><div><label for="zoomRange2">Preview zoom</label><small>Visual scale for the game</small></div><input id="zoomRange2" type="range" min="50" max="125" step="5" value="100"></div>
+    <p>Settings apply immediately and are kept for this page session. WEB LAB does not save your code or upload your games.</p>
+    <div class="modal-actions"><button id="settingsClose">Done</button></div>
+  </div>
+</div>
+<div class="modal-backdrop" id="helpModal" role="dialog" aria-modal="true" aria-labelledby="helpTitle">
+  <div class="modal"><h2 id="helpTitle">Help & compatibility</h2>
+    <p><b>Paste:</b> use the HTML tab for a complete standalone page. CSS and JavaScript tabs are inserted into the page when you run it.</p>
+    <p><b>Open HTML:</b> loads one HTML file. <b>Import ZIP:</b> imports a bundle of files and lets you choose the entry HTML file. ZIP imports are processed locally in this tab.</p>
+    <p><b>Relative assets:</b> regular image, audio, CSS, and script references are rewritten to local object URLs. Some games using dynamic fetch(), module imports, service workers, or complex server routes may not work in this static runner.</p>
+    <p><b>Sandbox:</b> games run in a separate restricted frame. Some features such as persistent storage, pop-ups, downloads, network APIs, pointer lock, or fullscreen may be limited by the browser or school policy. The runner cannot bypass network or school restrictions.</p>
+    <p><b>ZIP safety:</b> only import files you trust. Large archives may use substantial memory. Encrypted archives and unusual compression methods are not supported.</p>
+    <p><b>Privacy:</b> no account, backend, analytics, or cloud save is built into WEB LAB. GitHub Pages serves the app files; game code runs in your browser.</p>
+    <div class="modal-actions"><button id="helpClose">Close</button></div>
+  </div>
+</div>
+<script>
+(()=> {
+'use strict';
+const $ = id => document.getElementById(id);
+const state = {
+  tab:'html', code:{html:starterHTML(),css:'',js:''}, layout:'developer', theme:'dark',
+  running:false, importedFiles:null, entryPath:null, blobUrls:[], logs:[], consoleVisible:true,
+  previewZoom:100, editorFont:12, editorWidth:50, currentFile:'index.html', sourceMode:'paste'
+};
+function starterHTML(){return `<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <title>My Game</title>
+  <style>
+    body { margin: 0; min-height: 100vh; display: grid; place-items: center;
+           background: #111827; color: white; font-family: system-ui, sans-serif; }
+    .card { text-align: center; padding: 2rem; }
+    button { padding: .8rem 1.2rem; border: 0; border-radius: 8px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <h1>It works!</h1>
+    <p>Your game preview is ready.</p>
+    <button id="play">Click me</button>
+    <p id="score">Score: 0</p>
+  </div>
+  <script>
+    let score = 0;
+    document.querySelector('#play').addEventListener('click', () => {
+      document.querySelector('#score').textContent = 'Score: ' + (++score);
+    });
+    console.log('WEB LAB preview started');
+  <\/script>
+</body>
+</html>`}
+const editor=$('codeEditor'), gutter=$('gutter'), frame=$('gameFrame'), output=$('consoleOutput');
+function toast(msg,ms=3200){const el=$('toast');el.textContent=msg;el.hidden=false;clearTimeout(toast.timer);toast.timer=setTimeout(()=>el.hidden=true,ms)}
+function setStatus(text,kind='good'){const el=$('status');el.innerHTML=`<span class="dot ${kind==='good'?'':kind==='warn'?'warn':'bad'}"></span><span></span>`;el.lastElementChild.textContent=text}
+function updateGutter(){const lines=editor.value.split('\n').length;gutter.textContent=Array.from({length:lines},(_,i)=>i+1).join('\n');gutter.scrollTop=editor.scrollTop;$('charInfo').textContent=editor.value.length+' chars';updateCursor()}
+function updateCursor(){const before=editor.value.slice(0,editor.selectionStart);const ln=before.split('\n').length;const col=before.length-(before.lastIndexOf('\n')+1)+1;$('lineInfo').textContent=`Ln ${ln}, Col ${col}`}
+function saveTab(){state.code[state.tab]=editor.value}
+function loadTab(tab){saveTab();state.tab=tab;editor.value=state.code[tab]||'';document.querySelectorAll('.tab').forEach(b=>{const active=b.dataset.tab===tab;b.classList.toggle('active',active);b.setAttribute('aria-selected',String(active))});editor.setAttribute('aria-label',tab.toUpperCase()+' source editor');$('fileLabel').textContent=state.currentFile+(tab==='html'?'':'.'+(tab==='js'?'js':'css'));updateGutter();editor.focus()}
+function applyTheme(theme){state.theme=theme;document.documentElement.dataset.theme=theme;$('themeSelect').value=theme;$('themeSelect2').value=theme}
+function applyLayout(layout){state.layout=layout;$('app').classList.toggle('minimal',layout==='minimal');$('layoutSelect').value=layout;$('layoutBtn').innerHTML=layout==='minimal'?'◫ <span class="long-label">Developer mode</span>':'◫ <span class="long-label">Play mode</span>'}
+function applyZoom(v){state.previewZoom=Number(v);$('zoomRange').value=v;$('zoomRange2').value=v;$('zoomLabel').textContent=v+'%';if(frame&&!frame.hidden){frame.style.width=(10000/state.previewZoom)+'%';frame.style.height=(10000/state.previewZoom)+'%';frame.style.transform=`scale(${state.previewZoom/100})`;frame.style.transformOrigin='top left'}}
+function applyFont(v){state.editorFont=Number(v);$('fontRange').value=v;$('fontRange2').value=v;$('fontLabel').textContent=v+'px';editor.style.fontSize=v+'px';editor.style.lineHeight='1.55';gutter.style.fontSize=v+'px';gutter.style.lineHeight='1.55'}
+function applyWidth(v){state.editorWidth=Number(v);document.documentElement.style.setProperty('--editor-width',v+'%');$('splitRange').value=v}
+function clearLogs(){state.logs=[];output.innerHTML='<div class="empty-state">Console output will appear here when a game runs.</div>';$('consoleCount').textContent='0 messages'}
+function log(type,args){const msg=args.map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch{return String(v)}}).join(' ');state.logs.push({type,msg});if(state.logs.length>400)state.logs.shift();if(state.logs.length===1)output.innerHTML='';const line=document.createElement('div');line.className='logline '+(type==='error'?'error':type==='warn'?'warn':'');line.textContent='['+type.toUpperCase()+'] '+msg;output.appendChild(line);output.scrollTop=output.scrollHeight;$('consoleCount').textContent=state.logs.length+' message'+(state.logs.length===1?'':'s')}
+function cleanupBlobs(){for(const u of state.blobUrls){try{URL.revokeObjectURL(u)}catch{}}state.blobUrls=[]}
+function stopGame(){try{frame.src='about:blank'}catch{}frame.hidden=true;$('placeholder').hidden=false;state.running=false;cleanupBlobs();$('previewLabel').textContent='Stopped';setStatus('Stopped','warn')}
+function escapeScriptEnd(s){return s.replace(/<\/script/gi,'<\\/script')}
+function injectBridge(html){
+  const bridge=`<script>(function(){const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}})},'*')}catch(e){}};['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));addEventListener('unhandledrejection',e=>send('error',['Unhandled promise rejection',e.reason]));send('info',['Preview started']);})();<\/script>`;
+  if(/<head(?:\s[^>]*)?>/i.test(html))return html.replace(/<head(?:\s[^>]*)?>/i,m=>m+bridge);
+  return bridge+html;
+}
+function combineEditor(){let html=state.code.html||'<!doctype html><html><head></head><body></body></html>';const css=state.code.css||'',js=state.code.js||'';if(css){const style='<style>\n'+css.replace(/<\/style/gi,'<\\/style')+'\n</style>';if(/<\/head\s*>/i.test(html))html=html.replace(/<\/head\s*>/i,style+'</head>');else html=style+html}if(js){const script='<script>\n'+escapeScriptEnd(js)+'\n<\/script>';if(/<\/body\s*>/i.test(html))html=html.replace(/<\/body\s*>/i,script+'</body>');else html+=script}return html}
+function normalizePath(path,base=''){let p=String(path||'').replace(/\\/g,'/');if(p.startsWith('/'))p=p.slice(1);else if(base)p=base.replace(/[^/]*$/,'')+p;const out=[];for(const bit of p.split('/')){if(!bit||bit==='.')continue;if(bit==='..'){if(out.length)out.pop();else return null}else out.push(bit)}return out.join('/')}
+function findFile(files,path){if(!files)return null;const p=normalizePath(path);if(p&&files.has(p))return {path:p,blob:files.get(p)};if(p){const lower=p.toLowerCase();for(const [k,v] of files)if(k.toLowerCase()===lower)return {path:k,blob:v}}return null}
+function makeBlobUrl(blob,type){const b=blob instanceof Blob?blob:new Blob([blob],{type:type||'application/octet-stream'});const u=URL.createObjectURL(b);state.blobUrls.push(u);return u}
+function rewriteCss(css,base,files){return css.replace(/url\(\s*(['"]?)(?!data:|blob:|https?:|\/\/|#)([^)'"]+)\1\s*\)/gi,(all,q,url)=>{const found=findFile(files,normalizePath(url.trim(),base));return found?'url("'+makeBlobUrl(found.blob,found.blob.type)+'")':all})}
+function rewriteHtmlAssets(html,entry,files){
+  const base=entry.replace(/[^/]*$/,'');
+  html=html.replace(/\b(src|href|poster|data-src)\s*=\s*(["'])(.*?)\2/gi,(all,attr,q,val)=>{
+    const v=val.trim();if(!v||/^(?:[a-z]+:|\/\/|#|data:|blob:|javascript:)/i.test(v))return all;
+    const found=findFile(files,normalizePath(v,base));if(!found)return all;
+    const mime=found.blob.type||guessMime(found.path);
+    const url=makeBlobUrl(new Blob([found.blob],{type:mime}),mime);
+    return attr+'='+q+url+q;
+  });
+  html=html.replace(/<style\b[^>]*>([\s\S]*?)<\/style>/gi,(all,css)=>'<style>'+rewriteCss(css,base,files)+'</style>');
+  html=html.replace(/style\s*=\s*(["'])([\s\S]*?)\1/gi,(all,q,css)=>'style='+q+rewriteCss(css,base,files)+q);
+  return html;
+}
+function guessMime(path){const ext=(path.split('.').pop()||'').toLowerCase();return ({html:'text/html',htm:'text/html',css:'text/css',js:'text/javascript',mjs:'text/javascript',json:'application/json',svg:'image/svg+xml',png:'image/png',jpg:'image/jpeg',jpeg:'image/jpeg',gif:'image/gif',webp:'image/webp',avif:'image/avif',ico:'image/x-icon',mp3:'audio/mpeg',ogg:'audio/ogg',wav:'audio/wav',mp4:'video/mp4',webm:'video/webm',woff:'font/woff',woff2:'font/woff2',ttf:'font/ttf',txt:'text/plain',wasm:'application/wasm'})[ext]||'application/octet-stream'}
+function renderHtml(html,label,files=null,entry='index.html'){
+  stopGame();clearLogs();
+  if(files)html=rewriteHtmlAssets(html,entry,files);
+  html=injectBridge(html);
+  frame.hidden=false;$('placeholder').hidden=true;$('previewLabel').textContent=label||'Running';frame.style.width='100%';frame.style.height='100%';frame.style.transform='none';frame.srcdoc=html;applyZoom(state.previewZoom);state.running=true;setStatus('Running');$('consolePanel').classList.toggle('hidden',!state.consoleVisible);
+}
+function runCode(){saveTab();let html=combineEditor();renderHtml(html,'Editor preview');}
+function decodeUtf8(bytes){return new TextDecoder('utf-8',{fatal:false}).decode(bytes)}
+async function inflateRaw(bytes){if(typeof DecompressionStream==='undefined')throw new Error('This browser cannot decompress ZIP entries. Try a newer ChromeOS browser or use a standalone HTML file.');let ds;try{ds=new DecompressionStream('deflate-raw')}catch(e){throw new Error('This browser does not support raw DEFLATE ZIP compression. Try a ZIP made with standard compression or a standalone HTML file.')}const stream=new Blob([bytes]).stream().pipeThrough(ds);return new Uint8Array(await new Response(stream).arrayBuffer())}
+async function readZip(file){
+  const ab=await file.arrayBuffer();const bytes=new Uint8Array(ab);const view=new DataView(ab);
+  if(bytes.length<22)throw new Error('This ZIP file is too small or invalid.');
+  let eocd=-1;for(let i=bytes.length-22;i>=Math.max(0,bytes.length-65557);i--){if(view.getUint32(i,true)===0x06054b50){eocd=i;break}}
+  if(eocd<0)throw new Error('ZIP directory not found. This may be an unsupported ZIP64 or malformed archive.');
+  const count=view.getUint16(eocd+10,true),centralSize=view.getUint32(eocd+12,true),centralOffset=view.getUint32(eocd+16,true);
+  if(count>2500)throw new Error('This archive has too many entries (maximum 2,500).');
+  if(centralOffset+centralSize>bytes.length)throw new Error('ZIP directory is invalid.');
+  const files=new Map();let pos=centralOffset;let total=0;
+  for(let i=0;i<count;i++){
+    if(pos+46>bytes.length||view.getUint32(pos,true)!==0x02014b50)throw new Error('Invalid ZIP directory entry.');
+    const flags=view.getUint16(pos+8,true),method=view.getUint16(pos+10,true),compressedSize=view.getUint32(pos+20,true),uncompressedSize=view.getUint32(pos+24,true),nameLen=view.getUint16(pos+28,true),extraLen=view.getUint16(pos+30,true),commentLen=view.getUint16(pos+32,true),localOffset=view.getUint32(pos+42,true);
+    const name=decodeUtf8(bytes.slice(pos+46,pos+46+nameLen));pos+=46+nameLen+extraLen+commentLen;
+    if(name.endsWith('/'))continue;
+    if(flags&1)throw new Error('Encrypted ZIP entries are not supported: '+name);
+    const safe=normalizePath(name);if(!safe||safe.startsWith('../')||safe.includes(':'))throw new Error('Unsafe file path in ZIP: '+name);
+    if(uncompressedSize>30*1024*1024)throw new Error('A file exceeds the 30 MB per-file safety limit: '+name);
+    total+=uncompressedSize;if(total>120*1024*1024)throw new Error('Expanded ZIP exceeds the 120 MB safety limit.');
+    if(localOffset+30>bytes.length||view.getUint32(localOffset,true)!==0x04034b50)throw new Error('Invalid local ZIP entry: '+name);
+    const localNameLen=view.getUint16(localOffset+26,true),localExtraLen=view.getUint16(localOffset+28,true),dataStart=localOffset+30+localNameLen+localExtraLen,dataEnd=dataStart+compressedSize;
+    if(dataEnd>bytes.length)throw new Error('Truncated ZIP entry: '+name);
+    const compressed=bytes.slice(dataStart,dataEnd);let raw;
+    if(method===0)raw=compressed;else if(method===8)raw=await inflateRaw(compressed);else throw new Error('Unsupported ZIP compression method ('+method+') for '+name);
+    if(raw.length!==uncompressedSize)throw new Error('Size check failed for '+name);
+    files.set(safe,new Blob([raw],{type:guessMime(safe)}));
+  }
+  if(!files.size)throw new Error('No usable files were found in this ZIP.');
+  return files;
+}
+function htmlCandidates(files){return [...files.keys()].filter(p=>/\.(html?|xhtml)$/i.test(p)).sort((a,b)=>{const score=x=>(/^index\.html?$/i.test(x)?0:/\/index\.html?$/i.test(x)?1:2);return score(a)-score(b)||a.localeCompare(b)})}
+async function importZip(file){
+  if(file.size>80*1024*1024)throw new Error('ZIP is over the 80 MB upload limit. Try a smaller bundle.');
+  setStatus('Reading ZIP…','warn');toast('Reading ZIP locally. Large archives may take a moment.',5000);
+  const files=await readZip(file);const candidates=htmlCandidates(files);if(!candidates.length)throw new Error('No .html or .htm entry file was found.');
+  let entry=candidates[0];
+  if(candidates.length>1){entry=await chooseEntry(candidates);if(!entry)return}
+  state.importedFiles=files;state.entryPath=entry;state.sourceMode='zip';state.currentFile=entry;
+  const blob=files.get(entry);state.code.html=await blob.text();state.code.css='';state.code.js='';
+  loadTab('html');$('fileLabel').textContent=entry;$('previewLabel').textContent='ZIP ready: '+files.size+' files';
+  setStatus('ZIP loaded');toast('Loaded '+files.size+' files. Press Run to launch '+entry+'.');
+}
+function chooseEntry(paths){return new Promise(resolve=>{
+  const back=document.createElement('div');back.className='modal-backdrop open';back.setAttribute('role','dialog');back.setAttribute('aria-modal','true');
+  const box=document.createElement('div');box.className='modal';const title=document.createElement('h2');title.textContent='Choose the game entry file';box.appendChild(title);
+  const p=document.createElement('p');p.textContent='This ZIP contains multiple HTML files. Select the page you want to launch.';box.appendChild(p);
+  const sel=document.createElement('select');sel.style.cssText='width:100%;padding:10px;background:var(--editor);color:var(--text);border:1px solid var(--border);border-radius:8px';
+  paths.forEach(x=>{const o=document.createElement('option');o.value=x;o.textContent=x;sel.appendChild(o)});box.appendChild(sel);
+  const actions=document.createElement('div');actions.className='modal-actions';const cancel=document.createElement('button');cancel.textContent='Cancel';const ok=document.createElement('button');ok.textContent='Use this file';ok.className='primary';actions.append(cancel,ok);box.appendChild(actions);back.appendChild(box);document.body.appendChild(back);
+  const finish=v=>{back.remove();resolve(v)};cancel.onclick=()=>finish(null);ok.onclick=()=>finish(sel.value);back.addEventListener('click',e=>{if(e.target===back)finish(null)});sel.focus();
+})}
+async function loadHtml(file){if(file.size>30*1024*1024)throw new Error('HTML file exceeds 30 MB.');const text=await file.text();state.importedFiles=null;state.entryPath=null;state.sourceMode='html';state.currentFile=file.name;state.code={html:text,css:'',js:''};loadTab('html');$('previewLabel').textContent='File loaded';setStatus('HTML loaded');toast('Loaded '+file.name+'. Press Run to launch it.')}
+function messageHandler(event){if(event.source!==frame.contentWindow||!event.data||event.data.__webLab!==true)return;const type=['log','info','warn','error','debug'].includes(event.data.type)?event.data.type:'info';log(type,(event.data.args||[]).map(String))}
+function setConsoleVisible(v){state.consoleVisible=v;$('consolePanel').classList.toggle('hidden',!v);$('consoleBtn').textContent=v?'Console ✓':'Console'}
+function openModal(id){$(id).classList.add('open')}
+function closeModal(id){$(id).classList.remove('open')}
+function pasteCode(){const value=prompt('Paste your complete HTML code here. For a multi-file game, use Import ZIP.','');if(value!==null){state.importedFiles=null;state.entryPath=null;state.sourceMode='paste';state.currentFile='index.html';state.code={html:value,css:'',js:''};loadTab('html');toast('Code pasted. Press Run to launch it.');}}
+function clearCurrent(){if(!confirm('Clear the current '+state.tab.toUpperCase()+' editor?'))return;editor.value='';saveTab();updateGutter()}
+$('runBtn').addEventListener('click',runCode);$('stopBtn').addEventListener('click',stopGame);$('resetBtn').addEventListener('click',()=>{if(state.importedFiles&&state.entryPath){const b=state.importedFiles.get(state.entryPath);b.text().then(t=>renderHtml(t,state.entryPath,state.importedFiles,state.entryPath)).catch(e=>toast(e.message))}else runCode()});
+$('layoutBtn').addEventListener('click',()=>applyLayout(state.layout==='developer'?'minimal':'developer'));
+$('settingsBtn').addEventListener('click',()=>openModal('settingsModal'));$('settingsClose').addEventListener('click',()=>closeModal('settingsModal'));
+$('helpBtn').addEventListener('click',()=>openModal('helpModal'));$('helpClose').addEventListener('click',()=>closeModal('helpModal'));
+$('themeSelect').addEventListener('change',e=>applyTheme(e.target.value));$('themeSelect2').addEventListener('change',e=>applyTheme(e.target.value));
+$('layoutSelect').addEventListener('change',e=>applyLayout(e.target.value));$('zoomRange').addEventListener('input',e=>applyZoom(e.target.value));$('zoomRange2').addEventListener('input',e=>applyZoom(e.target.value));
+$('fontRange').addEventListener('input',e=>applyFont(e.target.value));$('fontRange2').addEventListener('input',e=>applyFont(e.target.value));$('splitRange').addEventListener('input',e=>applyWidth(e.target.value));
+$('consoleBtn').addEventListener('click',()=>setConsoleVisible(!state.consoleVisible));$('hideConsoleBtn').addEventListener('click',()=>setConsoleVisible(false));$('clearConsoleBtn').addEventListener('click',clearLogs);
+$('fullscreenBtn').addEventListener('click',async()=>{try{if(frame.hidden){toast('Run a game before using fullscreen.');return}const target=$('previewStage');if(document.fullscreenElement)await document.exitFullscreen();else await target.requestFullscreen()}catch(e){toast('Fullscreen is not available in this browser or page context.')}});
+$('loadHtmlBtn').addEventListener('click',()=>$('htmlFileInput').click());$('loadZipBtn').addEventListener('click',()=>$('zipFileInput').click());$('pasteBtn').addEventListener('click',pasteCode);$('clearBtn').addEventListener('click',clearCurrent);
+$('htmlFileInput').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{await loadHtml(f)}catch(err){toast(err.message);setStatus('Load failed','bad')}});
+$('zipFileInput').addEventListener('change',async e=>{const f=e.target.files[0];e.target.value='';if(!f)return;try{await importZip(f)}catch(err){toast(err.message,6000);setStatus('Import failed','bad')}});
+document.querySelectorAll('.tab').forEach(b=>b.addEventListener('click',()=>loadTab(b.dataset.tab)));
+editor.addEventListener('input',()=>{saveTab();updateGutter();state.sourceMode='paste';state.importedFiles=null;state.entryPath=null});
+editor.addEventListener('scroll',()=>{gutter.scrollTop=editor.scrollTop});
+editor.addEventListener('click',updateCursor);editor.addEventListener('keyup',updateCursor);
+editor.addEventListener('keydown',e=>{
+  if(e.key==='Tab'){e.preventDefault();const s=editor.selectionStart,en=editor.selectionEnd;editor.setRangeText('  ',s,en,'end');saveTab();updateGutter()}
+  if((e.ctrlKey||e.metaKey)&&e.key==='Enter'){e.preventDefault();runCode()}
+  if(e.key==='Enter'){const start=editor.selectionStart;const before=editor.value.slice(0,start);const line=before.slice(before.lastIndexOf('\n')+1);const indent=(line.match(/^\s*/)||[''])[0];if(indent){e.preventDefault();editor.setRangeText('\n'+indent,start,editor.selectionEnd,'end');saveTab();updateGutter()}}
+});
+window.addEventListener('message',messageHandler);
+document.addEventListener('keydown',e=>{if(e.key==='Escape'){document.querySelectorAll('.modal-backdrop.open').forEach(m=>m.classList.remove('open'))}if((e.ctrlKey||e.metaKey)&&e.key.toLowerCase()==='enter'){e.preventDefault();runCode()}});
+let dragDepth=0;const overlay=$('dropOverlay');
+window.addEventListener('dragenter',e=>{e.preventDefault();dragDepth++;overlay.classList.add('show')});
+window.addEventListener('dragover',e=>e.preventDefault());
+window.addEventListener('dragleave',e=>{e.preventDefault();dragDepth--;if(dragDepth<=0){dragDepth=0;overlay.classList.remove('show')}});
+window.addEventListener('drop',async e=>{e.preventDefault();dragDepth=0;overlay.classList.remove('show');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;try{if(/\.zip$/i.test(f.name))await importZip(f);else if(/\.html?$/i.test(f.name))await loadHtml(f);else toast('Drop an .html file or .zip bundle.')}catch(err){toast(err.message,6000);setStatus('Import failed','bad')}});
+window.addEventListener('beforeunload',cleanupBlobs);
+applyTheme('dark');applyLayout('developer');applyZoom(100);applyFont(12);applyWidth(50);loadTab('html');updateGutter();setStatus('Ready');
+})();
+</script>
+</body>
+</html>
