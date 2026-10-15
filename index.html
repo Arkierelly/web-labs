@@ -145,6 +145,7 @@ function cleanupBlobs(){for(const u of state.blobUrls){try{URL.revokeObjectURL(u
 function stopGame(){try{frame.src='about:blank'}catch{}frame.hidden=true;$('placeholder').hidden=false;state.running=false;cleanupBlobs();$('previewLabel').textContent='Stopped';setStatus('Stopped','warn')}
 function escapeScriptEnd(s){return s.replace(/<\/script/gi,'<\\/script')}
 function injectBridge(html){
+  const hideIdb=/\bEJS_(?:player|core|gameUrl|pathtodata)\b/.test(html);
   const bridge=`<script>(function(){
     const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}})},'*')}catch(e){}};
     // Gamepad fix: the sandboxed frame is not allowed to call getGamepads(),
@@ -189,6 +190,7 @@ function injectBridge(html){
       try{Object.defineProperty(window,name,{configurable:true,get:function(){return store}})}catch(e){}
     }
     send('info',['Storage stubbed (in-memory, resets on reload).']);
+    ${hideIdb?"try{Object.defineProperty(window,'indexedDB',{configurable:true,get:function(){return undefined}})}catch(e){}send('info',['EmulatorJS detected: indexedDB hidden so it skips its blocked cache.']);":''}
     ['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});
     addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));
     addEventListener('unhandledrejection',e=>send('error',['Unhandled promise rejection',e.reason]));
