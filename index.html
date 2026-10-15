@@ -229,6 +229,17 @@ function injectBridge(html){
       XMLHttpRequest.prototype.open=function(method,url){
         arguments[1]=fixUrl(url);
         try{
+          const shown=String(url);
+          this.addEventListener('load',function(){
+            try{
+              if(this.status>=400){
+                let ra='';try{ra=this.getResponseHeader('retry-after')||''}catch(e){}
+                send('warn',['HTTP '+this.status+' (XHR) for '+shown+(ra?' | retry-after: '+ra:'')]);
+              }
+            }catch(e){}
+          });
+        }catch(e){}
+        try{
           if(String(url).indexOf('blob:null/')>=0){
             this.addEventListener('load',function(){
               try{
@@ -251,7 +262,18 @@ function injectBridge(html){
             const fixed=fixUrl(input.url);
             if(fixed!==input.url){input=new Request(fixed,input)}
           }
-          return origFetch.call(this,input,init);
+          const p=origFetch.call(this,input,init);
+          try{
+            p.then(function(r){
+              try{
+                if(r&&r.status>=400){
+                  let ra='';try{ra=r.headers.get('retry-after')||''}catch(e){}
+                  send('warn',['HTTP '+r.status+' (fetch) for '+(r.url||String(input))+(ra?' | retry-after: '+ra:'')]);
+                }
+              }catch(e){}
+            }).catch(function(){});
+          }catch(e){}
+          return p;
         };
       }
     }catch(e){}
