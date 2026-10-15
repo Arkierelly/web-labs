@@ -54,7 +54,7 @@
         <div class="panel-head"><strong>PREVIEW</strong><span class="muted" id="previewLabel">Waiting for code</span><div class="right preview-tools"><button id="consoleBtn" class="debug-only">Console</button><button id="fullscreenBtn" title="Fullscreen preview">⛶ <span class="long-label">Fullscreen</span></button></div></div>
         <div class="preview-stage" id="previewStage">
           <div class="preview-placeholder" id="placeholder"><div class="big">⌘</div><h2>Ready when you are</h2><p>Paste a game, open an HTML file, or import a ZIP bundle. Then press <kbd>Run</kbd>.<br><br><span style="opacity:.8">Tip: Ctrl/⌘ + Enter runs the current code.</span></p></div>
-          <iframe id="gameFrame" title="Isolated game preview" sandbox="allow-scripts allow-forms allow-pointer-lock" allow="fullscreen; autoplay; gamepad; clipboard-read; clipboard-write" referrerpolicy="no-referrer" hidden></iframe>
+          <iframe id="gameFrame" title="Isolated game preview" sandbox="allow-scripts allow-forms allow-pointer-lock" allow="fullscreen; autoplay; gamepad *; clipboard-read; clipboard-write" referrerpolicy="no-referrer" hidden></iframe>
         </div>
         <section class="console" id="consolePanel"><div class="console-head"><strong>CONSOLE</strong><span id="consoleCount">0 messages</span><span style="margin-left:auto"></span><button id="clearConsoleBtn">Clear</button><button id="hideConsoleBtn">Hide</button></div><div class="console-output" id="consoleOutput"><div class="empty-state">Console output will appear here when a game runs.</div></div></section>
       </section>
@@ -163,8 +163,13 @@ function injectBridge(html){
             return [];
           }
         };
-        try{Object.defineProperty(proto,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}
-        catch(e){Object.defineProperty(navigator,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}
+        // Shadow the native method on this Navigator instance as well as the
+        // prototype. Some browsers expose the native binding in a way where a
+        // prototype replacement alone does not affect calls from game engines.
+        try{Object.defineProperty(proto,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}catch(e){}
+        try{Object.defineProperty(navigator,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}catch(e){}
+        // Verify the fallback is actually visible before third-party scripts run.
+        if(navigator.getGamepads!==safeGetGamepads)send('warn',['Browser did not permit the gamepad fallback; this game may still fail in the preview frame.']);
       }
     }catch(e){send('warn',['Could not install gamepad compatibility fallback.'])}
     addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));
