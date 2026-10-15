@@ -215,6 +215,17 @@ function injectBridge(html){
       const xhrOpen=XMLHttpRequest.prototype.open;
       XMLHttpRequest.prototype.open=function(method,url){
         arguments[1]=fixUrl(url);
+        try{
+          if(String(url).indexOf('blob:null/')>=0){
+            this.addEventListener('load',function(){
+              try{
+                const r=this.response;
+                const size=r&&(r.byteLength!==undefined?r.byteLength:(r.size!==undefined?r.size:(r.length!==undefined?r.length:'?')));
+                send('info',['Blob request finished: status '+this.status+', responseType "'+this.responseType+'", size '+size]);
+              }catch(e){}
+            });
+          }
+        }catch(e){}
         return xhrOpen.apply(this,arguments);
       };
     }catch(e){}
@@ -229,6 +240,32 @@ function injectBridge(html){
           }
           return origFetch.call(this,input,init);
         };
+      }
+    }catch(e){}
+    // Diagnostics: if WebAssembly rejects its input, print its size and first bytes
+    // (a valid wasm file starts with 00 61 73 6d; 1f 8b = gzip; 3c = HTML/text).
+    try{
+      const W=window.WebAssembly;
+      if(W){
+        const hex=function(b){
+          try{
+            const u=(b.buffer&&b.byteLength!==undefined&&b.buffer!==b)?new Uint8Array(b.buffer,b.byteOffset,Math.min(16,b.byteLength)):new Uint8Array(b,0,Math.min(16,b.byteLength));
+            return Array.from(u).map(function(x){return (x<16?'0':'')+x.toString(16)}).join(' ');
+          }catch(e){return '?'}
+        };
+        ['instantiate','compile'].forEach(function(n){
+          const orig=W[n];
+          if(typeof orig!=='function')return;
+          W[n]=function(src){
+            const p=orig.apply(this,arguments);
+            try{
+              if(src&&src.byteLength!==undefined){
+                p.catch(function(){send('warn',['WebAssembly.'+n+' failed. Input: '+src.byteLength+' bytes, first bytes: '+hex(src)])});
+              }
+            }catch(e){}
+            return p;
+          };
+        });
       }
     }catch(e){}
     ${hideIdb?"try{Object.defineProperty(window,'indexedDB',{configurable:true,get:function(){return undefined}})}catch(e){}send('info',['EmulatorJS detected: indexedDB hidden so it skips its blocked cache.']);":''}
