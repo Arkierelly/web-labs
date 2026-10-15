@@ -36,6 +36,7 @@
     <label for="themeSelect">Theme</label><select id="themeSelect"><option value="dark">Dark</option><option value="light">Light</option></select>
     <label for="zoomRange">Preview</label><input id="zoomRange" type="range" min="50" max="125" step="5" value="100" aria-label="Preview zoom"><span id="zoomLabel" class="muted">100%</span>
     <label for="fontRange">Editor size</label><input id="fontRange" type="range" min="10" max="18" value="12" aria-label="Editor font size"><span id="fontLabel" class="muted">12px</span>
+    <label for="compatToggle" title="Lets games use real storage, cookies and their own origin. Fixes most games, but isolates them less from this page.">Compat mode</label><input id="compatToggle" type="checkbox" checked aria-label="Compatibility mode">
     <span class="spacer"></span><button id="helpBtn">Help & limits</button>
   </div>
   <main class="mainarea">
@@ -73,6 +74,7 @@
     <div class="setting-row"><div><label for="splitRange">Editor width</label><small>Percentage of workspace width</small></div><input id="splitRange" type="range" min="30" max="70" value="50"></div>
     <div class="setting-row"><div><label for="fontRange2">Editor font size</label><small>10–18 pixels</small></div><input id="fontRange2" type="range" min="10" max="18" value="12"></div>
     <div class="setting-row"><div><label for="zoomRange2">Preview zoom</label><small>Visual scale for the game</small></div><input id="zoomRange2" type="range" min="50" max="125" step="5" value="100"></div>
+    <div class="setting-row"><div><label for="compatToggle2">Compatibility mode</label><small>Real storage, saves and blob URLs. Less isolation from this page. Press Run or Reset to apply.</small></div><input id="compatToggle2" type="checkbox" checked></div>
     <p>Settings apply immediately and are kept for this page session. WEB LAB does not save your code or upload your games.</p>
     <div class="modal-actions"><button id="settingsClose">Done</button></div>
   </div>
@@ -84,6 +86,7 @@
     <p><b>Relative assets:</b> regular image, audio, CSS, and script references are rewritten to local object URLs. Some games using dynamic fetch(), module imports, service workers, or complex server routes may not work in this static runner.</p>
     <p><b>Compatibility:</b> WEB LAB stubs the gamepad API so games that poll for controllers can continue with no gamepad detected, so keyboard/touch controls may still work. This does not emulate a controller.</p>
     <p><b>Sandbox:</b> games run in a separate restricted frame. Persistent storage such as IndexedDB, pop-ups, downloads, network APIs, pointer lock, or fullscreen may be limited by the browser or school policy. Some Unity games log IndexedDB cache warnings but can still run after downloading assets; others may fail if they require storage. The runner cannot bypass network or school restrictions.</p>
+    <p><b>Compat mode:</b> on by default. It lets the game frame share this page's origin, so real localStorage, IndexedDB, saves and blob URLs work. The tradeoff is weaker isolation: game code could read or change this page and anything stored for this site. Turn it off (top bar or settings) for games you don't trust, then press Run or Reset.</p>
     <p><b>ZIP safety:</b> only import files you trust. Large archives may use substantial memory. Encrypted archives and unusual compression methods are not supported.</p>
     <p><b>Privacy:</b> no account, backend, analytics, or cloud save is built into WEB LAB. GitHub Pages serves the app files; game code runs in your browser.</p>
     <div class="modal-actions"><button id="helpClose">Close</button></div>
@@ -96,7 +99,7 @@ const $ = id => document.getElementById(id);
 const state = {
   tab:'html', code:{html:starterHTML(),css:'',js:''}, layout:'developer', theme:'dark',
   running:false, importedFiles:null, entryPath:null, blobUrls:[], logs:[], consoleVisible:true,
-  previewZoom:100, editorFont:12, editorWidth:50, currentFile:'index.html', sourceMode:'paste'
+  previewZoom:100, editorFont:12, editorWidth:50, currentFile:'index.html', sourceMode:'paste', compat:true
 };
 function starterHTML(){return `<!doctype html>
 <html lang="en">
@@ -139,14 +142,16 @@ function applyLayout(layout){state.layout=layout;$('app').classList.toggle('mini
 function applyZoom(v){state.previewZoom=Number(v);$('zoomRange').value=v;$('zoomRange2').value=v;$('zoomLabel').textContent=v+'%';if(frame&&!frame.hidden){frame.style.width=(10000/state.previewZoom)+'%';frame.style.height=(10000/state.previewZoom)+'%';frame.style.transform=`scale(${state.previewZoom/100})`;frame.style.transformOrigin='top left'}}
 function applyFont(v){state.editorFont=Number(v);$('fontRange').value=v;$('fontRange2').value=v;$('fontLabel').textContent=v+'px';editor.style.fontSize=v+'px';editor.style.lineHeight='1.55';gutter.style.fontSize=v+'px';gutter.style.lineHeight='1.55'}
 function applyWidth(v){state.editorWidth=Number(v);document.documentElement.style.setProperty('--editor-width',v+'%');$('splitRange').value=v}
+function applyCompat(v){state.compat=!!v;$('compatToggle').checked=state.compat;$('compatToggle2').checked=state.compat;if(state.running)toast('Compat mode '+(state.compat?'on':'off')+'. Press Run or Reset to apply.')}
 function clearLogs(){state.logs=[];output.innerHTML='<div class="empty-state">Console output will appear here when a game runs.</div>';$('consoleCount').textContent='0 messages'}
 function log(type,args){const msg=args.map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch{return String(v)}}).join(' ');state.logs.push({type,msg});if(state.logs.length>400)state.logs.shift();if(state.logs.length===1)output.innerHTML='';const line=document.createElement('div');line.className='logline '+(type==='error'?'error':type==='warn'?'warn':'');line.textContent='['+type.toUpperCase()+'] '+msg;output.appendChild(line);output.scrollTop=output.scrollHeight;$('consoleCount').textContent=state.logs.length+' message'+(state.logs.length===1?'':'s')}
 function cleanupBlobs(){for(const u of state.blobUrls){try{URL.revokeObjectURL(u)}catch{}}state.blobUrls=[]}
 function stopGame(){try{frame.src='about:blank'}catch{}frame.hidden=true;$('placeholder').hidden=false;state.running=false;cleanupBlobs();$('previewLabel').textContent='Stopped';setStatus('Stopped','warn')}
 function escapeScriptEnd(s){return s.replace(/<\/script/gi,'<\\/script')}
 function injectBridge(html){
-  const hideIdb=/\bEJS_(?:player|core|gameUrl|pathtodata)\b/.test(html);
+  const hideIdb=!state.compat&&/\bEJS_(?:player|core|gameUrl|pathtodata)\b/.test(html);
   const bridge=`<script>(function(){
+    const COMPAT=${state.compat?'true':'false'};
     const fmt=function(v){
       try{
         if(typeof v==='string')return v;
@@ -166,7 +171,11 @@ function injectBridge(html){
     const noPads=function(){return []};
     for(const t of [Navigator.prototype,navigator]){
       for(const n of ['getGamepads','webkitGetGamepads']){
-        try{Object.defineProperty(t,n,{configurable:true,writable:true,value:noPads})}catch(e){}
+        try{
+          const nat=t[n];
+          const fn=(COMPAT&&typeof nat==='function')?function(){try{return nat.apply(navigator,arguments)||[]}catch(e){return []}}:noPads;
+          Object.defineProperty(t,n,{configurable:true,writable:true,value:fn});
+        }catch(e){}
       }
     }
     // Safety net: if a gamepad policy error still escapes, swallow it so the
@@ -174,7 +183,7 @@ function injectBridge(html){
     addEventListener('error',function(e){
       if(/getGamepads|Permission Policy/i.test(String(e.message))){e.preventDefault();e.stopImmediatePropagation()}
     },true);
-    send('info',['Gamepad API stubbed (no controllers).']);
+    send('info',['Gamepad API '+(COMPAT?'guarded (falls back to no controllers).':'stubbed (no controllers).')]);
     // Storage fix: the sandbox has no allow-same-origin, so touching
     // localStorage/sessionStorage throws a SecurityError. Provide in-memory
     // replacements so games can save/load during this session.
@@ -196,11 +205,15 @@ function injectBridge(html){
         getOwnPropertyDescriptor:function(t,p){return (p in data)?{value:data[p],enumerable:true,configurable:true,writable:true}:undefined}
       });
     };
+    let stubbed=false;
     for(const name of ['localStorage','sessionStorage']){
+      let works=true;
+      try{const s=window[name];s.setItem('__weblab_test','1');s.removeItem('__weblab_test')}catch(e){works=false}
+      if(works)continue;
       const store=makeStore();
-      try{Object.defineProperty(window,name,{configurable:true,get:function(){return store}})}catch(e){}
+      try{Object.defineProperty(window,name,{configurable:true,get:function(){return store}});stubbed=true}catch(e){}
     }
-    send('info',['Storage stubbed (in-memory, resets on reload).']);
+    send('info',[stubbed?'Storage stubbed (in-memory, resets on reload).':'Real browser storage is available.']);
     // Blob URL fix: in a sandbox without an origin, blob URLs look like
     // "blob:null/<id>". Unity's loader only treats http(s):// as absolute, so it
     // prefixes the Build folder and the request 404s. Strip that prefix again.
@@ -300,7 +313,8 @@ function renderHtml(html,label,files=null,entry='index.html'){
   stopGame();clearLogs();
   if(files)html=rewriteHtmlAssets(html,entry,files);
   html=injectBridge(html);
-  frame.hidden=false;$('placeholder').hidden=true;$('previewLabel').textContent=label||'Running';frame.style.width='100%';frame.style.height='100%';frame.style.transform='none';frame.srcdoc=html;applyZoom(state.previewZoom);state.running=true;setStatus('Running');$('consolePanel').classList.toggle('hidden',!state.consoleVisible);
+  frame.setAttribute('sandbox','allow-scripts allow-forms allow-pointer-lock'+(state.compat?' allow-same-origin allow-modals allow-popups allow-downloads':''));
+  frame.hidden=false;$('placeholder').hidden=true;$('previewLabel').textContent=label||'Running'+(state.compat?' (compat mode)':'');frame.style.width='100%';frame.style.height='100%';frame.style.transform='none';frame.srcdoc=html;applyZoom(state.previewZoom);state.running=true;setStatus('Running');$('consolePanel').classList.toggle('hidden',!state.consoleVisible);
 }
 function runCode(){saveTab();let html=combineEditor();renderHtml(html,'Editor preview');}
 function decodeUtf8(bytes){return new TextDecoder('utf-8',{fatal:false}).decode(bytes)}
@@ -369,6 +383,7 @@ $('helpBtn').addEventListener('click',()=>openModal('helpModal'));$('helpClose')
 $('themeSelect').addEventListener('change',e=>applyTheme(e.target.value));$('themeSelect2').addEventListener('change',e=>applyTheme(e.target.value));
 $('layoutSelect').addEventListener('change',e=>applyLayout(e.target.value));$('zoomRange').addEventListener('input',e=>applyZoom(e.target.value));$('zoomRange2').addEventListener('input',e=>applyZoom(e.target.value));
 $('fontRange').addEventListener('input',e=>applyFont(e.target.value));$('fontRange2').addEventListener('input',e=>applyFont(e.target.value));$('splitRange').addEventListener('input',e=>applyWidth(e.target.value));
+$('compatToggle').addEventListener('change',e=>applyCompat(e.target.checked));$('compatToggle2').addEventListener('change',e=>applyCompat(e.target.checked));
 $('consoleBtn').addEventListener('click',()=>setConsoleVisible(!state.consoleVisible));$('hideConsoleBtn').addEventListener('click',()=>setConsoleVisible(false));$('clearConsoleBtn').addEventListener('click',clearLogs);
 $('fullscreenBtn').addEventListener('click',async()=>{try{if(frame.hidden){toast('Run a game before using fullscreen.');return}const target=$('previewStage');if(document.fullscreenElement)await document.exitFullscreen();else await target.requestFullscreen()}catch(e){toast('Fullscreen is not available in this browser or page context.')}});
 $('loadHtmlBtn').addEventListener('click',()=>$('htmlFileInput').click());$('loadZipBtn').addEventListener('click',()=>$('zipFileInput').click());$('pasteBtn').addEventListener('click',pasteCode);$('clearBtn').addEventListener('click',clearCurrent);
@@ -391,7 +406,7 @@ window.addEventListener('dragover',e=>e.preventDefault());
 window.addEventListener('dragleave',e=>{e.preventDefault();dragDepth--;if(dragDepth<=0){dragDepth=0;overlay.classList.remove('show')}});
 window.addEventListener('drop',async e=>{e.preventDefault();dragDepth=0;overlay.classList.remove('show');const f=e.dataTransfer.files&&e.dataTransfer.files[0];if(!f)return;try{if(/\.zip$/i.test(f.name))await importZip(f);else if(/\.html?$/i.test(f.name))await loadHtml(f);else toast('Drop an .html file or .zip bundle.')}catch(err){toast(err.message,6000);setStatus('Import failed','bad')}});
 window.addEventListener('beforeunload',cleanupBlobs);
-applyTheme('dark');applyLayout('developer');applyZoom(100);applyFont(12);applyWidth(50);loadTab('html');updateGutter();setStatus('Ready');
+applyTheme('dark');applyLayout('developer');applyZoom(100);applyFont(12);applyWidth(50);applyCompat(true);loadTab('html');updateGutter();setStatus('Ready');
 })();
 </script>
 </body>
