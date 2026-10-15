@@ -163,6 +163,32 @@ function injectBridge(html){
       if(/getGamepads|Permission Policy/i.test(String(e.message))){e.preventDefault();e.stopImmediatePropagation()}
     },true);
     send('info',['Gamepad API stubbed (no controllers).']);
+    // Storage fix: the sandbox has no allow-same-origin, so touching
+    // localStorage/sessionStorage throws a SecurityError. Provide in-memory
+    // replacements so games can save/load during this session.
+    const makeStore=function(){
+      const data=Object.create(null);
+      const api={
+        getItem:function(k){k=String(k);return (k in data)?data[k]:null},
+        setItem:function(k,v){data[String(k)]=String(v)},
+        removeItem:function(k){delete data[String(k)]},
+        clear:function(){for(const k of Object.keys(data))delete data[k]},
+        key:function(i){const ks=Object.keys(data);return i<ks.length?ks[i]:null}
+      };
+      return new Proxy(api,{
+        get:function(t,p){if(p==='length')return Object.keys(data).length;if(p in t)return t[p];return (p in data)?data[p]:undefined},
+        set:function(t,p,v){data[String(p)]=String(v);return true},
+        deleteProperty:function(t,p){delete data[p];return true},
+        has:function(t,p){return (p in t)||(p in data)},
+        ownKeys:function(){return Object.keys(data)},
+        getOwnPropertyDescriptor:function(t,p){return (p in data)?{value:data[p],enumerable:true,configurable:true,writable:true}:undefined}
+      });
+    };
+    for(const name of ['localStorage','sessionStorage']){
+      const store=makeStore();
+      try{Object.defineProperty(window,name,{configurable:true,get:function(){return store}})}catch(e){}
+    }
+    send('info',['Storage stubbed (in-memory, resets on reload).']);
     ['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});
     addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));
     addEventListener('unhandledrejection',e=>send('error',['Unhandled promise rejection',e.reason]));
