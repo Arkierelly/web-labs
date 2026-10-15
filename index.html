@@ -82,7 +82,8 @@
     <p><b>Paste:</b> use the HTML tab for a complete standalone page. CSS and JavaScript tabs are inserted into the page when you run it.</p>
     <p><b>Open HTML:</b> loads one HTML file. <b>Import ZIP:</b> imports a bundle of files and lets you choose the entry HTML file. ZIP imports are processed locally in this tab.</p>
     <p><b>Relative assets:</b> regular image, audio, CSS, and script references are rewritten to local object URLs. Some games using dynamic fetch(), module imports, service workers, or complex server routes may not work in this static runner.</p>
-    <p><b>Sandbox:</b> games run in a separate restricted frame. Some features such as persistent storage, pop-ups, downloads, network APIs, pointer lock, or fullscreen may be limited by the browser or school policy. The runner cannot bypass network or school restrictions.</p>
+    <p><b>Compatibility:</b> WEB LAB catches blocked gamepad API calls and lets the game continue with no gamepad detected, so keyboard/touch controls may still work. This does not emulate a controller.</p>
+    <p><b>Sandbox:</b> games run in a separate restricted frame. Persistent storage such as IndexedDB, pop-ups, downloads, network APIs, pointer lock, or fullscreen may be limited by the browser or school policy. Some Unity games log IndexedDB cache warnings but can still run after downloading assets; others may fail if they require storage. The runner cannot bypass network or school restrictions.</p>
     <p><b>ZIP safety:</b> only import files you trust. Large archives may use substantial memory. Encrypted archives and unusual compression methods are not supported.</p>
     <p><b>Privacy:</b> no account, backend, analytics, or cloud save is built into WEB LAB. GitHub Pages serves the app files; game code runs in your browser.</p>
     <div class="modal-actions"><button id="helpClose">Close</button></div>
@@ -144,7 +145,32 @@ function cleanupBlobs(){for(const u of state.blobUrls){try{URL.revokeObjectURL(u
 function stopGame(){try{frame.src='about:blank'}catch{}frame.hidden=true;$('placeholder').hidden=false;state.running=false;cleanupBlobs();$('previewLabel').textContent='Stopped';setStatus('Stopped','warn')}
 function escapeScriptEnd(s){return s.replace(/<\/script/gi,'<\\/script')}
 function injectBridge(html){
-  const bridge=`<script>(function(){const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}})},'*')}catch(e){}};['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));addEventListener('unhandledrejection',e=>send('error',['Unhandled promise rejection',e.reason]));send('info',['Preview started']);})();<\/script>`;
+  const bridge=`<script>(function(){
+    const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}})},'*')}catch(e){}};
+    ['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});
+    // Some embedded games call getGamepads() during startup. In restricted
+    // iframe contexts the browser may throw a SecurityError; treat that as
+    // "no gamepads" so keyboard/touch gameplay can continue.
+    try{
+      const proto=typeof Navigator!=='undefined'?Navigator.prototype:null;
+      const original=proto&&proto.getGamepads;
+      if(typeof original==='function'){
+        let warned=false;
+        const safeGetGamepads=function(){
+          try{return original.call(this)||[]}
+          catch(e){
+            if(!warned){warned=true;send('warn',['Gamepad access is blocked by browser policy; continuing without gamepad input.'])}
+            return [];
+          }
+        };
+        try{Object.defineProperty(proto,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}
+        catch(e){Object.defineProperty(navigator,'getGamepads',{configurable:true,writable:true,value:safeGetGamepads})}
+      }
+    }catch(e){send('warn',['Could not install gamepad compatibility fallback.'])}
+    addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));
+    addEventListener('unhandledrejection',e=>send('error',['Unhandled promise rejection',e.reason]));
+    send('info',['Preview started']);
+  })();<\/script>`;
   if(/<head(?:\s[^>]*)?>/i.test(html))return html.replace(/<head(?:\s[^>]*)?>/i,m=>m+bridge);
   return bridge+html;
 }
