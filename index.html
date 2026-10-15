@@ -190,6 +190,36 @@ function injectBridge(html){
       try{Object.defineProperty(window,name,{configurable:true,get:function(){return store}})}catch(e){}
     }
     send('info',['Storage stubbed (in-memory, resets on reload).']);
+    // Blob URL fix: in a sandbox without an origin, blob URLs look like
+    // "blob:null/<id>". Unity's loader only treats http(s):// as absolute, so it
+    // prefixes the Build folder and the request 404s. Strip that prefix again.
+    const fixUrl=function(u){
+      try{
+        const s=String(u);
+        const i=s.indexOf('blob:null/');
+        return i>0?s.slice(i):u;
+      }catch(e){return u}
+    };
+    try{
+      const xhrOpen=XMLHttpRequest.prototype.open;
+      XMLHttpRequest.prototype.open=function(method,url){
+        arguments[1]=fixUrl(url);
+        return xhrOpen.apply(this,arguments);
+      };
+    }catch(e){}
+    try{
+      const origFetch=window.fetch;
+      if(typeof origFetch==='function'){
+        window.fetch=function(input,init){
+          if(typeof input==='string'){input=fixUrl(input)}
+          else if(input&&typeof input.url==='string'&&typeof Request!=='undefined'&&input instanceof Request){
+            const fixed=fixUrl(input.url);
+            if(fixed!==input.url){input=new Request(fixed,input)}
+          }
+          return origFetch.call(this,input,init);
+        };
+      }
+    }catch(e){}
     ${hideIdb?"try{Object.defineProperty(window,'indexedDB',{configurable:true,get:function(){return undefined}})}catch(e){}send('info',['EmulatorJS detected: indexedDB hidden so it skips its blocked cache.']);":''}
     ['log','info','warn','error','debug'].forEach(k=>{const old=console[k];console[k]=function(){send(k,arguments);try{old.apply(console,arguments)}catch(e){}}});
     addEventListener('error',e=>send('error',[e.message+' ('+e.filename+':'+e.lineno+')']));
