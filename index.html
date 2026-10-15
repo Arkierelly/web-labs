@@ -147,7 +147,18 @@ function escapeScriptEnd(s){return s.replace(/<\/script/gi,'<\\/script')}
 function injectBridge(html){
   const hideIdb=/\bEJS_(?:player|core|gameUrl|pathtodata)\b/.test(html);
   const bridge=`<script>(function(){
-    const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(v=>{try{return typeof v==='string'?v:JSON.stringify(v)}catch(e){return String(v)}})},'*')}catch(e){}};
+    const fmt=function(v){
+      try{
+        if(typeof v==='string')return v;
+        if(v&&(v.message||v.stack)){
+          const st=v.stack?' | '+String(v.stack).split(String.fromCharCode(10)).slice(0,4).join(' / '):'';
+          return (v.name||'Error')+': '+v.message+st;
+        }
+        const j=JSON.stringify(v);
+        return (j===undefined||j==='{}')?String(v):j;
+      }catch(e){return String(v)}
+    };
+    const send=(type,args)=>{try{parent.postMessage({__webLab:true,type,args:Array.from(args||[]).map(fmt)},'*')}catch(e){}};
     // Gamepad fix: the sandboxed frame is not allowed to call getGamepads(),
     // and engines like Unity treat the resulting SecurityError as fatal.
     // Replace the API with a stub that never touches the blocked native
